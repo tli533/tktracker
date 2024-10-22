@@ -24,6 +24,7 @@ const Home= () => {
             <h2>Home</h2>
             {matchHistory && (
                 <div>
+                    <h3>Player: {matchHistory.playerName}</h3>
                     <p>Wins: {matchHistory.wins.length}</p>
                     <p>Losses: {matchHistory.losses.length}</p>
                 </div>

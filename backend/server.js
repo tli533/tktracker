@@ -27,6 +27,9 @@ app.get('/api/player/:id', async (req, res) => {
         let winData = [];
         let loseData = [];
 
+        // Extract player's name from the appropriate div in player-header section
+        const playerName = $('section.player-header .name').text().trim();
+
         // Loop through each table row in the replay table
         $('tbody tr').each(function(i, elem) {
             // Find the rating data column for the player 
@@ -48,6 +51,7 @@ app.get('/api/player/:id', async (req, res) => {
         });
         // Send the win and lose data as JSON response
         res.status(200).json({
+            playerName: playerName,
             wins: winData,
             losses: loseData
         });
