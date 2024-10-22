@@ -1,11 +1,15 @@
 require('dotenv').config()
 
-const express = require('express')
-const axios = require('axios')
+const express = require('express');
+const axios = require('axios');
 const cheerio = require('cheerio');
+const cors = require('cors');
 
 //express app
 const app = express()
+
+// Use CORS middleware
+app.use(cors()); // Enable CORS for all routes
 
 app.get('/api/player/:id', async (req, res) => {
     const playerId = req.params.id;
