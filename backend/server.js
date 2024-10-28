@@ -1,12 +1,12 @@
-require('dotenv').config()
+require('dotenv').config();
 
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
 
-//express app
-const app = express()
+// Express app setup
+const app = express();
 
 // Use CORS middleware
 app.use(cors()); // Enable CORS for all routes
@@ -23,7 +23,7 @@ app.get('/api/player/:id', async (req, res) => {
         // Load the HTML into Cheerio for parsing
         const $ = cheerio.load(html);
 
-        // Create arrays to store win and lose data
+        // Create arrays to store win and lose data with dates
         let winData = [];
         let loseData = [];
 
@@ -32,6 +32,9 @@ app.get('/api/player/:id', async (req, res) => {
 
         // Loop through each table row in the replay table
         $('tbody tr').each(function(i, elem) {
+            // Find the date column for each match (adjust based on actual structure)
+            const dateCell = $(this).find('td:nth-child(1)'); // Assuming the date is in the first column
+
             // Find the rating data column for the player 
             const playerRatingCell = $(this).find('td:nth-child(4)');
 
@@ -39,23 +42,30 @@ app.get('/api/player/:id', async (req, res) => {
             const winSpan = playerRatingCell.find('span.win');
             const loseSpan = playerRatingCell.find('span.lose');
 
-            // If a win span is found, add it to winData
-            if (winSpan.length > 0) {
-                winData.push(winSpan.text().trim());
-            }
-
-            // If a lose span is found, add it to loseData
-            if (loseSpan.length > 0) {
-                loseData.push(loseSpan.text().trim());
-            }
+            const date = dateCell.text().trim();
+             // If a win span is found, add the date and result to winData
+    if (winSpan.length > 0) {
+        winData.push({
+            date: date,
+            result: winSpan.text().trim()
         });
-        // Send the win and lose data as JSON response
+    }
+
+    // If a lose span is found, add the date and result to loseData
+    if (loseSpan.length > 0) {
+        loseData.push({
+            date: date,
+            result: loseSpan.text().trim()
+        });
+    }
+        });
+
+        // Send the win and lose data with dates as JSON response
         res.status(200).json({
             playerName: playerName,
             wins: winData,
             losses: loseData
         });
-
 
     } catch (error) {
         console.error(error);
@@ -63,9 +73,7 @@ app.get('/api/player/:id', async (req, res) => {
     }
 });
 
-// listen for requests
+// Listen for requests
 app.listen(process.env.PORT, () => {
-    console.log('listening on port', process.env.PORT)
-})
-
-
+    console.log('listening on port', process.env.PORT);
+});
