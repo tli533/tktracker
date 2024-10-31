@@ -48,28 +48,66 @@ const SearchPlayer = () => {
         }
     };
 
-    // Area chart data configuration
-    const chartData = {
-        labels: matchHistory ? matchHistory.wins.map(win => win.date) : [], // Use dates from wins
-        datasets: [
-            {
-                label: 'Wins',
-                data: matchHistory ? matchHistory.wins.map(win => parseInt(win.result)) : [],
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                fill: true,
-                tension: 0.3,
-            },
-            {
-                label: 'Losses',
-                data: matchHistory ? matchHistory.losses.map(loss => parseInt(loss.result)) : [],
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                fill: true,
-                tension: 0.3,
-            }
-        ],
-    };
+// Transform matchHistory data to count cumulative wins and losses over time
+const dailyCounts = matchHistory ? matchHistory.wins.concat(matchHistory.losses).reduce((acc, item) => {
+    // Convert date to consistent YYYY-MM-DD format
+    const dateOnly = new Date(item.date).toISOString().split('T')[0];
+
+    // Initialize the date entry if it doesn't exist
+    if (!acc[dateOnly]) {
+        acc[dateOnly] = { wins: 0, losses: 0 };
+    }
+
+    // Count each win or loss as 1 for the date
+    if (matchHistory.wins.includes(item)) {
+        acc[dateOnly].wins += 1;
+    } else if (matchHistory.losses.includes(item)) {
+        acc[dateOnly].losses += 1;
+    }
+
+    return acc;
+}, {}) : {};
+
+// Sort dates and calculate cumulative totals
+const sortedDates = Object.keys(dailyCounts).sort();
+let cumulativeWins = 0;
+let cumulativeLosses = 0;
+const cumulativeWinCounts = [];
+const cumulativeLossCounts = [];
+
+// Calculate cumulative totals for each date
+sortedDates.forEach(date => {
+    cumulativeWins += dailyCounts[date].wins;
+    cumulativeLosses += dailyCounts[date].losses;
+    cumulativeWinCounts.push(cumulativeWins);
+    cumulativeLossCounts.push(cumulativeLosses);
+});
+
+
+// Configure the chart data
+const chartData = {
+    labels: sortedDates,
+    datasets: [
+        {
+            label: 'Cumulative Wins',
+            data: cumulativeWinCounts,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            fill: true,
+            tension: 0.3,
+        },
+        {
+            label: 'Cumulative Losses',
+            data: cumulativeLossCounts,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            fill: true,
+            tension: 0.3,
+        }
+    ],
+};
+
+
 
     return (
         <div className="search-player">
@@ -103,7 +141,7 @@ const SearchPlayer = () => {
                                 x: {
                                     title: { display: true, text: 'Date' }
                                 },
-                                y: { beginAtZero: true }
+                                y: { beginAtZero: true, title: { display: true, text: 'Count' } }
                             }
                         }} />
                     </div>
