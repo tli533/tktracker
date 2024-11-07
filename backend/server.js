@@ -92,15 +92,13 @@ app.get("/api/player/:id/matchups", async (req, res) => {
     $("tbody tr").each(function () {
       const opponent = $(this).find("td:nth-child(1)").text().trim(); // Opponent's name
       const gamesPlayed = $(this).find("td:nth-child(2)").text().trim(); // Total games played
-      const gamesWon = $(this).find("td:nth-child(3)").text().trim(); // Games won
-      const gamesLost = $(this).find("td:nth-child(4)").text().trim(); // Games lost
+      const winRate = $(this).find("td:nth-child(3)").text().trim(); // Games won
 
       // Push parsed data into matchups array
       matchups.push({
         opponent: opponent,
         gamesPlayed: parseInt(gamesPlayed),
-        gamesWon: parseInt(gamesWon),
-        gamesLost: parseInt(gamesLost),
+        winRate: parseInt(winRate),
       });
     });
 
