@@ -94,7 +94,7 @@ const SearchPlayer = () => {
     labels: sortedDates,
     datasets: [
       {
-        label: "Cumulative Wins",
+        label: "Wins",
         data: cumulativeWinCounts,
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         borderColor: "rgba(75, 192, 192, 1)",
@@ -102,7 +102,7 @@ const SearchPlayer = () => {
         tension: 0.3,
       },
       {
-        label: "Cumulative Losses",
+        label: "Losses",
         data: cumulativeLossCounts,
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         borderColor: "rgba(255, 99, 132, 1)",
@@ -180,7 +180,7 @@ const SearchPlayer = () => {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: "Count",
+                        text: "Matches",
                         font: { size: window.innerWidth < 600 ? 10 : 14 },
                       },
                     },
