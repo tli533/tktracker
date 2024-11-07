@@ -64,33 +64,25 @@ const SearchPlayer = () => {
   // Transform matchHistory data to count cumulative wins and losses over time
   const dailyCounts = matchHistory
     ? matchHistory.wins.concat(matchHistory.losses).reduce((acc, item) => {
-        // Convert date to consistent YYYY-MM-DD format
         const dateOnly = new Date(item.date).toISOString().split("T")[0];
-
-        // Initialize the date entry if it doesn't exist
         if (!acc[dateOnly]) {
           acc[dateOnly] = { wins: 0, losses: 0 };
         }
-
-        // Count each win or loss as 1 for the date
         if (matchHistory.wins.includes(item)) {
           acc[dateOnly].wins += 1;
         } else if (matchHistory.losses.includes(item)) {
           acc[dateOnly].losses += 1;
         }
-
         return acc;
       }, {})
     : {};
 
-  // Sort dates and calculate cumulative totals
   const sortedDates = Object.keys(dailyCounts).sort();
   let cumulativeWins = 0;
   let cumulativeLosses = 0;
   const cumulativeWinCounts = [];
   const cumulativeLossCounts = [];
 
-  // Calculate cumulative totals for each date
   sortedDates.forEach((date) => {
     cumulativeWins += dailyCounts[date].wins;
     cumulativeLosses += dailyCounts[date].losses;
@@ -98,7 +90,6 @@ const SearchPlayer = () => {
     cumulativeLossCounts.push(cumulativeLosses);
   });
 
-  // Configure the line chart data
   const lineChartData = {
     labels: sortedDates,
     datasets: [
@@ -121,7 +112,6 @@ const SearchPlayer = () => {
     ],
   };
 
-  // Configure the pie chart data
   const pieChartData = {
     labels: ["Wins", "Losses"],
     datasets: [
@@ -156,25 +146,48 @@ const SearchPlayer = () => {
         matchHistory && (
           <div>
             <h3>Player: {matchHistory.playerName}</h3>
-            <Line
-              data={lineChartData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { display: true, position: "top" },
-                  title: { display: true, text: "Wins vs Losses" },
-                },
-                scales: {
-                  x: {
-                    title: { display: true, text: "Date" },
+
+            {/* Line Chart Component */}
+            <div className="line-chart-container">
+              <Line
+                data={lineChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: "top",
+                      labels: {
+                        font: { size: window.innerWidth < 600 ? 10 : 14 },
+                      },
+                    },
+                    title: {
+                      display: true,
+                      text: "Wins vs Losses",
+                      font: { size: window.innerWidth < 600 ? 14 : 20 },
+                    },
                   },
-                  y: {
-                    beginAtZero: true,
-                    title: { display: true, text: "Count" },
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: "Date",
+                        font: { size: window.innerWidth < 600 ? 10 : 14 },
+                      },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: "Count",
+                        font: { size: window.innerWidth < 600 ? 10 : 14 },
+                      },
+                    },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </div>
 
             {/* Pie Chart Component */}
             <div className="pie-chart-container">
@@ -182,9 +195,20 @@ const SearchPlayer = () => {
                 data={pieChartData}
                 options={{
                   responsive: true,
+                  maintainAspectRatio: false,
                   plugins: {
-                    legend: { display: true, position: "top" },
-                    title: { display: true, text: "Total Wins vs Losses" },
+                    legend: {
+                      display: true,
+                      position: "top",
+                      labels: {
+                        font: { size: window.innerWidth < 600 ? 10 : 14 },
+                      },
+                    },
+                    title: {
+                      display: true,
+                      text: "Total Wins vs Losses",
+                      font: { size: window.innerWidth < 600 ? 14 : 20 },
+                    },
                   },
                 }}
               />

@@ -36,3 +36,19 @@
     transform: rotate(360deg);
   }
 }
+
+.line-chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px; /* Limit max width */
+  margin: auto;
+  height: 300px; /* Set height for consistent scaling */
+}
+
+.pie-chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px; /* Set a smaller max width for pie chart */
+  margin: auto;
+  height: 300px;
+}
