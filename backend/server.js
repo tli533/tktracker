@@ -90,15 +90,33 @@ app.get("/api/player/:id/matchups", async (req, res) => {
 
     // Loop through each row in the matchup table (adjust selectors as needed)
     $("tbody tr").each(function () {
-      const opponent = $(this).find("td:nth-child(1)").text().trim(); // Opponent's name
-      const gamesPlayed = $(this).find("td:nth-child(2)").text().trim(); // Total games played
-      const winRate = $(this).find("td:nth-child(3)").text().trim(); // Games won
+      // Extract player name and opponent character
+      const opponentCell = $(this).find("td:nth-child(1)");
+      const opponentText = opponentCell.find("a").text().trim();
+
+      // Extract the opponent character (e.g., "Kazuya")
+      const opponentCharacter = opponentText.split("vs")[1]?.trim();
+
+      // Extract games played as total of both values (e.g., 35 + 36)
+      const gamesPlayedText = $(this)
+        .find("td:nth-child(2) span")
+        .text()
+        .trim();
+      const [wins, losses] = gamesPlayedText
+        .split("–")
+        .map((num) => parseInt(num.trim()));
+      const gamesPlayed = wins + losses;
+
+      // Extract win rate as a float
+      const winRate = parseFloat($(this).find("td:nth-child(3)").text().trim());
 
       // Push parsed data into matchups array
       matchups.push({
-        opponent: opponent,
-        gamesPlayed: parseInt(gamesPlayed),
-        winRate: parseInt(winRate),
+        opponent: opponentCharacter, // use just the opponent character
+        gamesPlayed: gamesPlayed, // total games played as sum of wins and losses
+        wins: wins, // individual wins
+        losses: losses, // individual losses
+        winRate: winRate, // keeps decimal points
       });
     });
 
