@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { hatch } from "ldrs";
 import { Line, Pie } from "react-chartjs-2";
 import {
@@ -32,11 +32,19 @@ const SearchPlayer = () => {
   const [matchHistory, setMatchHistory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchHistory, setSearchHistory] = useState([]);
+
+  useEffect(() => {
+    // Load search history from local storage when the component mounts
+    const history = JSON.parse(localStorage.getItem("searchHistory")) || [];
+    setSearchHistory(history);
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
     setError(null);
     setMatchHistory(null);
+
     if (!playerId) {
       setError("Please enter a player ID.");
       return;
@@ -54,6 +62,14 @@ const SearchPlayer = () => {
 
       const json = await response.json();
       setMatchHistory(json);
+
+      // Update search history
+      const updatedHistory = [
+        playerId,
+        ...searchHistory.filter((id) => id !== playerId),
+      ];
+      setSearchHistory(updatedHistory);
+      localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -133,7 +149,13 @@ const SearchPlayer = () => {
           placeholder="Enter Player ID"
           value={playerId}
           onChange={(e) => setPlayerId(e.target.value)}
+          list="player-history"
         />
+        <datalist id="player-history">
+          {searchHistory.map((id, index) => (
+            <option key={index} value={id} />
+          ))}
+        </datalist>
         <button type="submit">Search</button>
       </form>
 
