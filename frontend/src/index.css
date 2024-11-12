@@ -37,3 +37,8 @@ header a {
   height: 300px;
   margin: 20px auto;
 }
+
+.bar-chart-container {
+  height: 400px; /* Adjust as needed */
+  
+}

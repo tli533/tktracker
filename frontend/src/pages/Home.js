@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { hatch } from "ldrs";
-import { Line, Pie } from "react-chartjs-2";
+import { Line, Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,8 @@ import {
   Legend,
   Filler,
   ArcElement,
+  BarElement, // Add this
+  BarController, // Add this
 } from "chart.js";
 
 hatch.register();
@@ -20,6 +22,8 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement, // Add this
+  BarController, // Add this
   Title,
   Tooltip,
   Legend,
@@ -52,16 +56,31 @@ const SearchPlayer = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(
+
+      // Fetch player match history
+      const playerResponse = await fetch(
         `http://localhost:4000/api/player/${playerId}`
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch data");
+      if (!playerResponse.ok) {
+        throw new Error("Failed to fetch player data");
       }
+      const playerData = await playerResponse.json();
 
-      const json = await response.json();
-      setMatchHistory(json);
+      // Fetch player matchup data
+      const matchupResponse = await fetch(
+        `http://localhost:4000/api/player/${playerId}/matchups`
+      );
+      if (!matchupResponse.ok) {
+        throw new Error("Failed to fetch matchup data");
+      }
+      const matchupData = await matchupResponse.json();
+      console.log("Matchup Data:", matchupData);
+
+      // Combine data in the matchHistory state
+      setMatchHistory({
+        ...playerData,
+        matchups: matchupData, // Add the matchup data here
+      });
 
       // Update search history
       const updatedHistory = [
@@ -98,6 +117,9 @@ const SearchPlayer = () => {
   let cumulativeLosses = 0;
   const cumulativeWinCounts = [];
   const cumulativeLossCounts = [];
+  const matchupData = matchHistory?.matchups?.matchups || [];
+
+  console.log("Processed Matchup Data:", matchupData);
 
   sortedDates.forEach((date) => {
     cumulativeWins += dailyCounts[date].wins;
@@ -138,6 +160,62 @@ const SearchPlayer = () => {
         borderWidth: 1,
       },
     ],
+  };
+
+  const barChartData = {
+    labels: matchupData.map((matchup) => matchup.opponent),
+    datasets: [
+      {
+        label: "Win Rate (%)",
+        data: matchupData.map((matchup) => matchup.winRate),
+        backgroundColor: "rgba(54, 162, 235, 0.6)",
+        borderColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+      },
+      tooltip: {
+        callbacks: {
+          // Customize tooltip content
+          label: function (context) {
+            const matchup = matchupData[context.dataIndex];
+            return [
+              `Win Rate: ${matchup.winRate}%`,
+              `Total Games: ${matchup.gamesPlayed}`,
+              `Record: ${matchup.wins}W-${matchup.losses}L`,
+            ];
+          },
+        },
+      },
+      title: {
+        display: true,
+        text: "Character Matchup Win Rates",
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        title: {
+          display: true,
+          text: "Win Rate (%)",
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Characters",
+        },
+      },
+    },
   };
 
   return (
@@ -235,6 +313,15 @@ const SearchPlayer = () => {
                 }}
               />
             </div>
+
+            {matchHistory?.matchups?.matchups &&
+            matchHistory.matchups.matchups.length > 0 ? (
+              <div className="bar-chart-container">
+                <Bar data={barChartData} options={barChartOptions} />
+              </div>
+            ) : (
+              <p>No matchups data available.</p>
+            )}
           </div>
         )
       )}
