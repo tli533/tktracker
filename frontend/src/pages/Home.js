@@ -194,10 +194,12 @@ const SearchPlayer = () => {
             ];
           },
         },
+        font: { size: window.innerWidth < 600 ? 14 : 20 },
       },
       title: {
         display: true,
         text: "Character Matchup Win Rates",
+        font: { size: window.innerWidth < 600 ? 14 : 20 },
       },
     },
     scales: {
@@ -207,12 +209,14 @@ const SearchPlayer = () => {
         title: {
           display: true,
           text: "Win Rate (%)",
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
         },
       },
       x: {
         title: {
           display: true,
           text: "Characters",
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
         },
       },
     },
