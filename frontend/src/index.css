@@ -32,13 +32,49 @@ header a {
   margin: 0 auto;
 }
 
+/* Container to hold the graphs in a grid layout */
+.graph-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Small screens: stack charts in a single column */
+@media (max-width: 600px) {
+  .chart-container {
+    flex-direction: column;
+  }
+  .line-chart, .pie-chart {
+    min-width: 100%;
+  }
+}
+
+/* Container for Line and Pie charts */
+.charts-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 20px;
+  background-color: #f9f9f9; /* Light background for each graph */
+  border-radius: 10px;
+}
+
+.line-chart-container {
+  flex: 0 0 65%; /* 65% width */
+  background-color: #f9f9f9; /* Light background for each graph */
+  padding: 15px;
+  border-radius: 10px;
+}
 .pie-chart-container {
-  width: 300px;
-  height: 300px;
-  margin: 20px auto;
+  flex: 0 0 35%; /* 35% width */
+  background-color: #f9f9f9; /* Light background for each graph */
+  padding: 15px;
+  border-radius: 10px;
 }
 
 .bar-chart-container {
   height: 400px; /* Adjust as needed */
-  
+  background-color: #f9f9f9; /* Light background for each graph */
+  padding: 15px;
+  border-radius: 10px;
 }

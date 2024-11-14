@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { hatch } from "ldrs";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Line, Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -28,7 +29,8 @@ ChartJS.register(
   Tooltip,
   Legend,
   Filler,
-  ArcElement
+  ArcElement,
+  ChartDataLabels
 );
 
 const SearchPlayer = () => {
@@ -74,7 +76,6 @@ const SearchPlayer = () => {
         throw new Error("Failed to fetch matchup data");
       }
       const matchupData = await matchupResponse.json();
-      console.log("Matchup Data:", matchupData);
 
       // Combine data in the matchHistory state
       setMatchHistory({
@@ -119,8 +120,6 @@ const SearchPlayer = () => {
   const cumulativeLossCounts = [];
   const matchupData = matchHistory?.matchups?.matchups || [];
 
-  console.log("Processed Matchup Data:", matchupData);
-
   sortedDates.forEach((date) => {
     cumulativeWins += dailyCounts[date].wins;
     cumulativeLosses += dailyCounts[date].losses;
@@ -128,6 +127,8 @@ const SearchPlayer = () => {
     cumulativeLossCounts.push(cumulativeLosses);
   });
 
+  // --- Graphs --- //
+  //Line chart
   const lineChartData = {
     labels: sortedDates,
     datasets: [
@@ -150,6 +151,55 @@ const SearchPlayer = () => {
     ],
   };
 
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        labels: {
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
+        },
+      },
+      title: {
+        display: true,
+        text: "Wins vs Losses",
+        font: { size: window.innerWidth < 600 ? 14 : 20 },
+      },
+      datalabels: {
+        display: false, // Disable datalabels for the line chart
+      },
+      tooltip: {
+        enabled: true, // Show data on hover
+        callbacks: {
+          label: function (context) {
+            const label = context.dataset.label || "";
+            return `${label}: ${context.raw}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: "Date",
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
+        },
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Matches",
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
+        },
+      },
+    },
+  };
+
+  //Pie chart
   const pieChartData = {
     labels: ["Wins", "Losses"],
     datasets: [
@@ -162,14 +212,52 @@ const SearchPlayer = () => {
     ],
   };
 
+  const pieChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        labels: {
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const totalGames = cumulativeWins + cumulativeLosses;
+            const winRate =
+              totalGames > 0
+                ? ((cumulativeWins / totalGames) * 100).toFixed(2)
+                : 0;
+
+            // Check if this is the 'Wins' slice of the pie chart
+            if (context.label.includes("Wins")) {
+              return `Wins: ${context.raw} (${winRate}%)`;
+            } else {
+              return `Losses: ${context.raw}`;
+            }
+          },
+        },
+      },
+      title: {
+        display: true,
+        text: "Total Wins vs Losses",
+        font: { size: window.innerWidth < 600 ? 14 : 20 },
+      },
+    },
+  };
+
+  // Bar graph
   const barChartData = {
     labels: matchupData.map((matchup) => matchup.opponent),
     datasets: [
       {
         label: "Win Rate (%)",
         data: matchupData.map((matchup) => matchup.winRate),
-        backgroundColor: "rgba(54, 162, 235, 0.6)",
-        borderColor: "rgba(54, 162, 235, 1)",
+        backgroundColor: "rgba(75, 192, 192, 0.6)",
+        borderColor: "rgba(75, 192, 192, 1)",
         borderWidth: 1,
       },
     ],
@@ -183,8 +271,8 @@ const SearchPlayer = () => {
         position: "top",
       },
       tooltip: {
+        enabled: true, // Always enable tooltip
         callbacks: {
-          // Customize tooltip content
           label: function (context) {
             const matchup = matchupData[context.dataIndex];
             return [
@@ -194,7 +282,17 @@ const SearchPlayer = () => {
             ];
           },
         },
-        font: { size: window.innerWidth < 600 ? 14 : 20 },
+      },
+      datalabels: {
+        display: function (context) {
+          // Only show data labels on larger screens
+          return window.innerWidth >= 600;
+        },
+        color: "black",
+        font: { size: 12 },
+        formatter: function (value) {
+          return `${value}%`;
+        },
       },
       title: {
         display: true,
@@ -251,81 +349,30 @@ const SearchPlayer = () => {
           <div>
             <h3>Player: {matchHistory.playerName}</h3>
 
-            {/* Line Chart Component */}
-            <div className="line-chart-container">
-              <Line
-                data={lineChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: "top",
-                      labels: {
-                        font: { size: window.innerWidth < 600 ? 10 : 14 },
-                      },
-                    },
-                    title: {
-                      display: true,
-                      text: "Wins vs Losses",
-                      font: { size: window.innerWidth < 600 ? 14 : 20 },
-                    },
-                  },
-                  scales: {
-                    x: {
-                      title: {
-                        display: true,
-                        text: "Date",
-                        font: { size: window.innerWidth < 600 ? 10 : 14 },
-                      },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      title: {
-                        display: true,
-                        text: "Matches",
-                        font: { size: window.innerWidth < 600 ? 10 : 14 },
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
+            {/* Main Graph Container */}
+            <div className="graph-container">
+              {/* Top Half: Line and Pie Charts */}
+              <div className="charts-container">
+                {/* Line Chart */}
+                <div className="line-chart-container">
+                  <Line data={lineChartData} options={lineChartOptions} />
+                </div>
 
-            {/* Pie Chart Component */}
-            <div className="pie-chart-container">
-              <Pie
-                data={pieChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: "top",
-                      labels: {
-                        font: { size: window.innerWidth < 600 ? 10 : 14 },
-                      },
-                    },
-                    title: {
-                      display: true,
-                      text: "Total Wins vs Losses",
-                      font: { size: window.innerWidth < 600 ? 14 : 20 },
-                    },
-                  },
-                }}
-              />
-            </div>
-
-            {matchHistory?.matchups?.matchups &&
-            matchHistory.matchups.matchups.length > 0 ? (
-              <div className="bar-chart-container">
-                <Bar data={barChartData} options={barChartOptions} />
+                {/* Pie Chart */}
+                <div className="pie-chart-container">
+                  <Pie data={pieChartData} options={pieChartOptions} />
+                </div>
               </div>
-            ) : (
-              <p>No matchups data available.</p>
-            )}
+
+              {/* Bottom Half: Bar Chart */}
+              <div className="bar-chart-container">
+                {matchupData.length > 0 ? (
+                  <Bar data={barChartData} options={barChartOptions} />
+                ) : (
+                  <p>No matchups data available.</p>
+                )}
+              </div>
+            </div>
           </div>
         )
       )}
