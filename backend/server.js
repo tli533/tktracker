@@ -128,6 +128,36 @@ app.get("/api/player/:id/matchups", async (req, res) => {
   }
 });
 
+app.get("/api/player/:id/highest-rating", async (req, res) => {
+  const playerId = req.params.id;
+  const url = `https://wank.wavu.wiki/player/${playerId}`;
+
+  try {
+    const response = await axios.get(url);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    // Get the first rating-group and then its first rating
+    const highestRatedCharacter = $(
+      ".rating-group:first-child .rating:first-child .char"
+    )
+      .text()
+      .trim();
+
+    //console.log("Highest rated character found:", highestRatedCharacter);
+
+    res.status(200).json({
+      highestRatedCharacter: highestRatedCharacter,
+    });
+  } catch (error) {
+    console.error("Error details:", error);
+    res.status(500).json({
+      error: "Error fetching highest rating data",
+      details: error.message,
+    });
+  }
+});
+
 // Listen for requests
 app.listen(process.env.PORT, () => {
   console.log("listening on port", process.env.PORT);

@@ -39,6 +39,7 @@ const SearchPlayer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchHistory, setSearchHistory] = useState([]);
+  const [highestRatedChar, setHighestRatedChar] = useState(null);
 
   useEffect(() => {
     // Load search history from local storage when the component mounts
@@ -50,6 +51,7 @@ const SearchPlayer = () => {
     e.preventDefault();
     setError(null);
     setMatchHistory(null);
+    setHighestRatedChar(null); // Reset the highest rated character
 
     if (!playerId) {
       setError("Please enter a player ID.");
@@ -77,11 +79,18 @@ const SearchPlayer = () => {
       }
       const matchupData = await matchupResponse.json();
 
+      const ratingResponse = await fetch(
+        `http://localhost:4000/api/player/${playerId}/highest-rating`
+      );
+      if (!ratingResponse.ok) throw new Error("Failed to fetch rating data");
+      const ratingData = await ratingResponse.json();
+
       // Combine data in the matchHistory state
       setMatchHistory({
         ...playerData,
         matchups: matchupData, // Add the matchup data here
       });
+      setHighestRatedChar(ratingData.highestRatedCharacter);
 
       // Update search history
       const updatedHistory = [
@@ -348,6 +357,14 @@ const SearchPlayer = () => {
         matchHistory && (
           <div>
             <h3>Player: {matchHistory.playerName}</h3>
+            {highestRatedChar && (
+              <div className="highest-rated-char">
+                <h4>
+                  Highest Rated Character:{" "}
+                  <span className="character-name">{highestRatedChar}</span>
+                </h4>
+              </div>
+            )}
 
             {/* Main Graph Container */}
             <div className="graph-container">
