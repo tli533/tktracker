@@ -43,77 +43,49 @@ const SearchPlayer = () => {
 
   // On component mount, check localStorage for previous search
   useEffect(() => {
-    const savedPlayerId = localStorage.getItem("lastSearchedPlayerId");
-    const savedSearchHistory =
-      JSON.parse(localStorage.getItem("searchHistory")) || [];
-
-    if (savedPlayerId) {
-      setPlayerId(savedPlayerId);
-      // Automatically trigger search when component loads
-      handleSearch({ preventDefault: () => {} }, savedPlayerId);
-    }
-
-    setSearchHistory(savedSearchHistory);
+    const history = JSON.parse(localStorage.getItem("searchHistory")) || [];
+    setSearchHistory(history);
   }, []);
 
-  const handleSearch = async (e, forcedPlayerId = null) => {
-    // Prevent default form submission
-    if (e && e.preventDefault) e.preventDefault();
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setMatchHistory(null);
+    setHighestRatedChar(null); // Reset the highest rated character
 
-    const searchId = forcedPlayerId || playerId;
-
-    // Validation
-    if (!searchId) {
+    if (!playerId) {
       setError("Please enter a player ID.");
       return;
     }
 
-    // Clear previous state
-    setError(null);
-    setMatchHistory(null);
-    setHighestRatedChar(null);
-
     try {
       setLoading(true);
 
-      // Fetch player match history
+      // Your existing fetches
       const playerResponse = await fetch(
-        `http://localhost:4000/api/player/${searchId}`
+        `http://localhost:4000/api/player/${playerId}`
       );
       if (!playerResponse.ok) throw new Error("Failed to fetch player data");
       const playerData = await playerResponse.json();
 
-      // Fetch player matchup data
       const matchupResponse = await fetch(
-        `http://localhost:4000/api/player/${searchId}/matchups`
+        `http://localhost:4000/api/player/${playerId}/matchups`
       );
       if (!matchupResponse.ok) throw new Error("Failed to fetch matchup data");
       const matchupData = await matchupResponse.json();
 
-      // Fetch highest rated character
+      // Add the new fetch for highest rated character
       const ratingResponse = await fetch(
-        `http://localhost:4000/api/player/${searchId}/highest-rating`
+        `http://localhost:4000/api/player/${playerId}/highest-rating`
       );
       if (!ratingResponse.ok) throw new Error("Failed to fetch rating data");
       const ratingData = await ratingResponse.json();
 
-      // Update match history
       setMatchHistory({
         ...playerData,
         matchups: matchupData,
       });
       setHighestRatedChar(ratingData.highestRatedCharacter);
-
-      // Update localStorage
-      localStorage.setItem("lastSearchedPlayerId", searchId);
-
-      // Update and save search history
-      const updatedHistory = [
-        searchId,
-        ...searchHistory.filter((id) => id !== searchId),
-      ].slice(0, 10); // Limit to last 10 searches
-      setSearchHistory(updatedHistory);
-      localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
     } catch (err) {
       console.error("Search Error:", err);
       setError(err.message);
