@@ -41,65 +41,81 @@ const SearchPlayer = () => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [highestRatedChar, setHighestRatedChar] = useState(null);
 
+  // On component mount, check localStorage for previous search
   useEffect(() => {
-    // Load search history from local storage when the component mounts
-    const history = JSON.parse(localStorage.getItem("searchHistory")) || [];
-    setSearchHistory(history);
+    const savedPlayerId = localStorage.getItem("lastSearchedPlayerId");
+    const savedSearchHistory =
+      JSON.parse(localStorage.getItem("searchHistory")) || [];
+
+    if (savedPlayerId) {
+      setPlayerId(savedPlayerId);
+      // Automatically trigger search when component loads
+      handleSearch({ preventDefault: () => {} }, savedPlayerId);
+    }
+
+    setSearchHistory(savedSearchHistory);
   }, []);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setMatchHistory(null);
-    setHighestRatedChar(null); // Reset the highest rated character
+  const handleSearch = async (e, forcedPlayerId = null) => {
+    // Prevent default form submission
+    if (e && e.preventDefault) e.preventDefault();
 
-    if (!playerId) {
+    const searchId = forcedPlayerId || playerId;
+
+    // Validation
+    if (!searchId) {
       setError("Please enter a player ID.");
       return;
     }
+
+    // Clear previous state
+    setError(null);
+    setMatchHistory(null);
+    setHighestRatedChar(null);
 
     try {
       setLoading(true);
 
       // Fetch player match history
       const playerResponse = await fetch(
-        `http://localhost:4000/api/player/${playerId}`
+        `http://localhost:4000/api/player/${searchId}`
       );
-      if (!playerResponse.ok) {
-        throw new Error("Failed to fetch player data");
-      }
+      if (!playerResponse.ok) throw new Error("Failed to fetch player data");
       const playerData = await playerResponse.json();
 
       // Fetch player matchup data
       const matchupResponse = await fetch(
-        `http://localhost:4000/api/player/${playerId}/matchups`
+        `http://localhost:4000/api/player/${searchId}/matchups`
       );
-      if (!matchupResponse.ok) {
-        throw new Error("Failed to fetch matchup data");
-      }
+      if (!matchupResponse.ok) throw new Error("Failed to fetch matchup data");
       const matchupData = await matchupResponse.json();
 
+      // Fetch highest rated character
       const ratingResponse = await fetch(
-        `http://localhost:4000/api/player/${playerId}/highest-rating`
+        `http://localhost:4000/api/player/${searchId}/highest-rating`
       );
       if (!ratingResponse.ok) throw new Error("Failed to fetch rating data");
       const ratingData = await ratingResponse.json();
 
-      // Combine data in the matchHistory state
+      // Update match history
       setMatchHistory({
         ...playerData,
-        matchups: matchupData, // Add the matchup data here
+        matchups: matchupData,
       });
       setHighestRatedChar(ratingData.highestRatedCharacter);
 
-      // Update search history
+      // Update localStorage
+      localStorage.setItem("lastSearchedPlayerId", searchId);
+
+      // Update and save search history
       const updatedHistory = [
-        playerId,
-        ...searchHistory.filter((id) => id !== playerId),
-      ];
+        searchId,
+        ...searchHistory.filter((id) => id !== searchId),
+      ].slice(0, 10); // Limit to last 10 searches
       setSearchHistory(updatedHistory);
       localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
     } catch (err) {
+      console.error("Search Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -328,6 +344,13 @@ const SearchPlayer = () => {
       },
     },
   };
+  // Get the latest 10 matches from the match history
+  const latestMatches =
+    matchHistory && matchHistory.wins && matchHistory.losses
+      ? [...matchHistory.wins, ...matchHistory.losses]
+          .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date (newest first)
+          .slice(0, 10) // Take the latest 10 matches
+      : [];
 
   return (
     <div className="search-player">
@@ -384,7 +407,38 @@ const SearchPlayer = () => {
               {/* Bottom Half: Bar Chart */}
               <div className="bar-chart-container">
                 {matchupData.length > 0 ? (
-                  <Bar data={barChartData} options={barChartOptions} />
+                  <>
+                    <Bar data={barChartData} options={barChartOptions} />
+                    {/* Latest Matches Table */}
+                    <div className="latest-matches">
+                      <h4>Latest 10 Matches</h4>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Result</th>
+                            <th>Opponent</th>
+                            {/* Add other columns if needed */}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {latestMatches.map((match, index) => (
+                            <tr key={index}>
+                              <td>
+                                {new Date(match.date).toLocaleDateString()}
+                              </td>
+                              <td>
+                                {matchHistory.wins.includes(match)
+                                  ? "Win"
+                                  : "Loss"}
+                              </td>
+                              <td>{match.opponent || "Unknown"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 ) : (
                   <p>No matchups data available.</p>
                 )}
