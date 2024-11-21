@@ -92,18 +92,19 @@ header a {
   font-weight: bold;
 }
 
+/* Default table styles */
 .latest-matches {
   margin-top: 20px;
-}
-
-.latest-matches h4 {
-  margin-bottom: 10px;
-  font-size: 1.2em;
+  background-color: #f9f9f9; /* Light background for each graph */
+  padding: 15px;
+  border-radius: 10px;
+  
 }
 
 .latest-matches table {
   width: 100%;
   border-collapse: collapse;
+  
 }
 
 .latest-matches th,
@@ -113,7 +114,22 @@ header a {
   text-align: center;
 }
 
+/* Header row styling */
 .latest-matches th {
   background-color: #f4f4f4;
   font-weight: bold;
+}
+
+/* Conditional row styles */
+.win-row {
+  background-color: #d0f0ff; /* Light blue for wins */
+}
+
+.loss-row {
+  background-color: #ffd6d6; /* Light red for losses */
+}
+
+/* Optional: Hover effect for better visibility */
+.latest-matches tr:hover {
+  background-color: #7dd3c5;
 }

@@ -311,7 +311,7 @@ const SearchPlayer = () => {
       datalabels: {
         display: function (context) {
           // Only show data labels on larger screens
-          return window.innerWidth >= 600;
+          return window.innerWidth >= 800;
         },
         color: "black",
         font: { size: 12 },
@@ -423,7 +423,14 @@ const SearchPlayer = () => {
                         </thead>
                         <tbody>
                           {latestMatches.map((match, index) => (
-                            <tr key={index}>
+                            <tr
+                              key={index}
+                              className={
+                                matchHistory.wins.includes(match)
+                                  ? "win-row"
+                                  : "loss-row"
+                              }
+                            >
                               <td>
                                 {new Date(match.date).toLocaleDateString()}
                               </td>
