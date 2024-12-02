@@ -30,6 +30,10 @@ app.get("/api/player/:id", async (req, res) => {
     //Extracting player's name, win/loss gain, opponent name and ingame id
     $("tbody tr").each(function () {
       const dateCell = $(this).find("td:nth-child(1)");
+
+      const p1CharacterCell = $(this).find("td:nth-child(2)");
+      const p2CharacterCell = $(this).find("td:nth-child(6)");
+
       const playerRatingCell = $(this).find("td:nth-child(4)");
       const winSpan = playerRatingCell.find("span.win");
       const loseSpan = playerRatingCell.find("span.lose");
@@ -45,12 +49,16 @@ app.get("/api/player/:id", async (req, res) => {
         .trim();
 
       const date = dateCell.text().trim();
+      const playerChar = p1CharacterCell.text().trim();
+      const oppChar = p2CharacterCell.text().trim();
 
       if (winSpan.length > 0) {
         winData.push({
           date: date,
+          char: playerChar,
           opp: opponentName,
           oppId: opponentId,
+          oppChar: oppChar,
           result: winSpan.text().trim(),
         });
       }
@@ -58,8 +66,10 @@ app.get("/api/player/:id", async (req, res) => {
       if (loseSpan.length > 0) {
         loseData.push({
           date: date,
+          char: playerChar,
           opp: opponentName,
           oppId: opponentId,
+          oppChar: oppChar,
           result: loseSpan.text().trim(),
         });
       }

@@ -93,7 +93,7 @@ header a {
 }
 
 /* Default table styles */
-.latest-matches {
+.match-table {
   margin-top: 20px;
   background-color: #f9f9f9; /* Light background for each graph */
   padding: 15px;
@@ -101,21 +101,21 @@ header a {
   
 }
 
-.latest-matches table {
+.match-table table {
   width: 100%;
   border-collapse: collapse;
   
 }
 
-.latest-matches th,
-.latest-matches td {
+.match-table th,
+.match-table td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
 }
 
 /* Header row styling */
-.latest-matches th {
+.match-table th {
   background-color: #f4f4f4;
   font-weight: bold;
 }
@@ -130,6 +130,29 @@ header a {
 }
 
 /* Optional: Hover effect for better visibility */
-.latest-matches tr:hover {
+.match-table tr:hover {
   background-color: #7dd3c5;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.pagination button.active {
+  font-weight: bold;
+  background-color: #7dd3c5;
+  color: white;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

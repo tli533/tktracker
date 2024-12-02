@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import MatchTable from "../components/MatchTable";
 import { hatch } from "ldrs";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Line, Pie, Bar } from "react-chartjs-2";
@@ -317,11 +318,12 @@ const SearchPlayer = () => {
     },
   };
   // Get the latest 10 matches from the match history
-  const latestMatches =
+  // Get all matches from the match history
+  const allMatches =
     matchHistory && matchHistory.wins && matchHistory.losses
-      ? [...matchHistory.wins, ...matchHistory.losses]
-          .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date (newest first)
-          .slice(0, 10) // Take the latest 10 matches
+      ? [...matchHistory.wins, ...matchHistory.losses].sort(
+          (a, b) => new Date(b.date) - new Date(a.date) // Sort by date (newest first)
+        )
       : [];
 
   return (
@@ -382,41 +384,7 @@ const SearchPlayer = () => {
                   <>
                     <Bar data={barChartData} options={barChartOptions} />
                     {/* Latest Matches Table */}
-                    <div className="latest-matches">
-                      <h4>Latest 10 Matches</h4>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Result</th>
-                            <th>Opponent</th>
-                            {/* Add other columns if needed */}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {latestMatches.map((match, index) => (
-                            <tr
-                              key={index}
-                              className={
-                                matchHistory.wins.includes(match)
-                                  ? "win-row"
-                                  : "loss-row"
-                              }
-                            >
-                              <td>
-                                {new Date(match.date).toLocaleDateString()}
-                              </td>
-                              <td>
-                                {matchHistory.wins.includes(match)
-                                  ? "Win"
-                                  : "Loss"}
-                              </td>
-                              <td>{match.opponent || "Unknown"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <MatchTable matches={allMatches} wins={matchHistory.wins} />
                   </>
                 ) : (
                   <p>No matchups data available.</p>
