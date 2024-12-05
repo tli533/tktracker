@@ -8,6 +8,17 @@ const cors = require("cors");
 // Express app setup
 const app = express();
 
+const redis = require("redis");
+const client = redis.createClient(); // Create Redis client instance
+
+// Connect to Redis
+client.on("connect", () => {
+  console.log("Connected to Redis");
+});
+client.on("error", (err) => {
+  console.error("Redis error:", err);
+});
+
 app.use(cors()); // Enable CORS for all routes
 // Use CORS middleware
 app.get("/api/player/:id", async (req, res) => {
