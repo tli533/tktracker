@@ -9,51 +9,53 @@ const cors = require("cors");
 const app = express();
 
 const redis = require("redis");
-const client = redis.createClient(); // Create Redis client instance
 
-// Connect to Redis
-client.on("connect", () => {
-  console.log("Connected to Redis");
-});
-client.on("error", (err) => {
-  console.error("Redis error:", err);
-});
+// Create a Redis client
+const client = redis.createClient();
 
+const DEFAULT_EXPIRATION = 3600;
+
+client.on("error", (err) => console.error("Redis Client Error", err));
+
+// Ensure the client connects before using it
+(async () => {
+  await client.connect();
+})();
 app.use(cors()); // Enable CORS for all routes
 // Use CORS middleware
 app.get("/api/player/:id", async (req, res) => {
   const playerId = req.params.id;
-  const url = `https://wank.wavu.wiki/player/${playerId}`;
 
   try {
-    // Fetch data from the external URL
-    const response = await axios.get(url);
-    const html = response.data;
+    // Check Redis for cached data
+    const cachedData = await client.get(`player_${playerId}`);
+    if (cachedData) {
+      console.log("Cache hit");
+      return res.json(JSON.parse(cachedData));
+    }
 
-    // Load the HTML into Cheerio for parsing
+    // If no cache, fetch data from the external URL
+    const url = `https://wank.wavu.wiki/player/${playerId}`;
+    const response = await axios.get(url, { timeout: 10000 }); // 10-second timeout
+    const html = response.data;
     const $ = cheerio.load(html);
 
     let winData = [];
     let loseData = [];
-
     const playerName = $("section.player-header .name").text().trim();
 
-    //Extracting player's name, win/loss gain, opponent name and ingame id
     $("tbody tr").each(function () {
       const dateCell = $(this).find("td:nth-child(1)");
-
       const p1CharacterCell = $(this).find("td:nth-child(2)");
       const p2CharacterCell = $(this).find("td:nth-child(6)");
-
       const playerRatingCell = $(this).find("td:nth-child(4)");
       const winSpan = playerRatingCell.find("span.win");
       const loseSpan = playerRatingCell.find("span.lose");
-
       const opponentCell = $(this).find("td:nth-child(5)");
+
       let opponentName = opponentCell.text().trim();
       const opponentId = opponentCell.find("a").attr("href")?.split("/").pop();
 
-      // Clean up the opponent's name
       opponentName = opponentName
         .replace(/\s+/g, " ")
         .replace("(h2h)", "")
@@ -86,11 +88,20 @@ app.get("/api/player/:id", async (req, res) => {
       }
     });
 
-    res.json({
+    const responseData = {
       playerName: playerName,
       wins: winData,
       losses: loseData,
-    });
+    };
+
+    // Cache data in Redis for 1 hour (3600 seconds)
+    await client.setEx(
+      `player_${playerId}`,
+      DEFAULT_EXPIRATION,
+      JSON.stringify(responseData)
+    );
+
+    res.json(responseData);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch player data" });
