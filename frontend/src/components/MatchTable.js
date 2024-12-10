@@ -45,12 +45,14 @@ const MatchTable = ({ matches, wins }) => {
           ))}
         </tbody>
       </table>
-      {/* Pagination Component */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      <div>
+        {/* Pagination Component */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      </div>
     </div>
   );
 };

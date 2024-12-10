@@ -39,16 +39,6 @@ header a {
   gap: 20px;
 }
 
-/* Small screens: stack charts in a single column */
-@media (max-width: 600px) {
-  .chart-container {
-    flex-direction: column;
-  }
-  .line-chart, .pie-chart {
-    min-width: 100%;
-  }
-}
-
 /* Container for Line and Pie charts */
 .charts-container {
   display: flex;
@@ -93,17 +83,29 @@ header a {
 }
 
 /* Default table styles */
+
 .match-table {
+  max-height: 400px; /* Adjust based on your layout */
   margin-top: 20px;
   background-color: #f9f9f9; /* Light background for each graph */
   padding: 15px;
   border-radius: 10px;
   
+  
+}
+
+.match-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f1f1f1; /* Ensure it's distinct */
+  z-index: 1; /* Ensure it stays above table rows */
 }
 
 .match-table table {
   width: 100%;
   border-collapse: collapse;
+  overflow-x: auto;
+  font-size: 0.9em;  
   
 }
 
@@ -136,6 +138,7 @@ header a {
 
 .pagination {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   margin-top: 10px;
 }
@@ -155,4 +158,27 @@ header a {
 .pagination button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* Small screens: stack charts in a single column */
+@media (max-width: 600px) {
+  .chart-container {
+    flex-direction: column;
+  }
+  .line-chart, .pie-chart {
+    min-width: 100%;
+  }
+  .pagination {
+    font-size: 0.8em;
+  }
+  .match-table {
+    display: block;
+    overflow-x: scroll;
+  }
+  .match-table th,
+  .match-table td {
+    padding: 8px;
+    word-wrap: break-word;
+  }
+
 }

@@ -108,13 +108,19 @@ app.get("/api/player/:id", async (req, res) => {
   }
 });
 
-// New endpoint for matchup data
 app.get("/api/player/:id/matchups", async (req, res) => {
   const playerId = req.params.id;
-  const url = `https://wank.wavu.wiki/player/${playerId}/matchups`;
 
   try {
+    // Check Redis cache
+    const cachedData = await client.get(`player_matchups_${playerId}`);
+    if (cachedData) {
+      console.log("Cache hit for matchups");
+      return res.json(JSON.parse(cachedData));
+    }
+
     // Fetch data from the external URL
+    const url = `https://wank.wavu.wiki/player/${playerId}/matchups`;
     const response = await axios.get(url);
     const html = response.data;
 
@@ -126,14 +132,10 @@ app.get("/api/player/:id/matchups", async (req, res) => {
 
     // Loop through each row in the matchup table (adjust selectors as needed)
     $("tbody tr").each(function () {
-      // Extract player name and opponent character
       const opponentCell = $(this).find("td:nth-child(1)");
       const opponentText = opponentCell.find("a").text().trim();
-
-      // Extract the opponent character (e.g., "Kazuya")
       const opponentCharacter = opponentText.split("vs")[1]?.trim();
 
-      // Extract games played as total of both values (e.g., 35 + 36)
       const gamesPlayedText = $(this)
         .find("td:nth-child(2) span")
         .text()
@@ -143,20 +145,24 @@ app.get("/api/player/:id/matchups", async (req, res) => {
         .map((num) => parseInt(num.trim()));
       const gamesPlayed = wins + losses;
 
-      // Extract win rate as a float
       const winRate = parseFloat($(this).find("td:nth-child(3)").text().trim());
 
-      // Push parsed data into matchups array
       matchups.push({
-        opponent: opponentCharacter, // use just the opponent character
-        gamesPlayed: gamesPlayed, // total games played as sum of wins and losses
-        wins: wins, // individual wins
-        losses: losses, // individual losses
-        winRate: winRate, // keeps decimal points
+        opponent: opponentCharacter,
+        gamesPlayed: gamesPlayed,
+        wins: wins,
+        losses: losses,
+        winRate: winRate,
       });
     });
 
-    // Send the matchup data as JSON response
+    // Cache the data
+    await client.setEx(
+      `player_matchups_${playerId}`,
+      DEFAULT_EXPIRATION,
+      JSON.stringify({ matchups })
+    );
+
     res.status(200).json({ matchups });
   } catch (error) {
     console.error(error);
@@ -166,9 +172,17 @@ app.get("/api/player/:id/matchups", async (req, res) => {
 
 app.get("/api/player/:id/highest-rating", async (req, res) => {
   const playerId = req.params.id;
-  const url = `https://wank.wavu.wiki/player/${playerId}`;
 
   try {
+    // Check Redis cache
+    const cachedData = await client.get(`player_highest_rating_${playerId}`);
+    if (cachedData) {
+      console.log("Cache hit for highest rating");
+      return res.json(JSON.parse(cachedData));
+    }
+
+    // Fetch data from the external URL
+    const url = `https://wank.wavu.wiki/player/${playerId}`;
     const response = await axios.get(url);
     const html = response.data;
     const $ = cheerio.load(html);
@@ -180,11 +194,14 @@ app.get("/api/player/:id/highest-rating", async (req, res) => {
       .text()
       .trim();
 
-    //console.log("Highest rated character found:", highestRatedCharacter);
+    // Cache the data
+    await client.setEx(
+      `player_highest_rating_${playerId}`,
+      DEFAULT_EXPIRATION,
+      JSON.stringify({ highestRatedCharacter })
+    );
 
-    res.status(200).json({
-      highestRatedCharacter: highestRatedCharacter,
-    });
+    res.status(200).json({ highestRatedCharacter });
   } catch (error) {
     console.error("Error details:", error);
     res.status(500).json({
