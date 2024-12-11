@@ -17,7 +17,10 @@ const MatchTable = ({ matches, wins }) => {
 
   return (
     <div className="match-table">
-      <h4>Match History</h4>
+      <div className="match-title">
+        <h4>Match History</h4>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -45,7 +48,7 @@ const MatchTable = ({ matches, wins }) => {
           ))}
         </tbody>
       </table>
-      <div>
+      <div className="pagination-container">
         {/* Pagination Component */}
         <Pagination
           currentPage={currentPage}

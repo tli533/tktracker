@@ -82,23 +82,37 @@ header a {
   font-weight: bold;
 }
 
-/* Default table styles */
+/* Title section */
+.match-title {
+  position: sticky;
+  top: 0;
+  left: 0; /* Makes it follow during horizontal scrolling */
+  z-index: 2; /* Ensure it stays above the table content */
+  background-color: #f9f9f9; /* Match the table header for consistency */
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+  
+}
 
 .match-table {
+  display: flex;
+  flex-direction: column;
   max-height: 400px; /* Adjust based on your layout */
   margin-top: 20px;
   background-color: #f9f9f9; /* Light background for each graph */
-  padding: 15px;
   border-radius: 10px;
-  
-  
+  overflow: auto; /* Ensure table can scroll */
+  position: relative;
 }
 
 .match-table thead th {
   position: sticky;
-  top: 0;
+  top: 85px; /* Adjust based on title height */
   background-color: #f1f1f1; /* Ensure it's distinct */
   z-index: 1; /* Ensure it stays above table rows */
+  
 }
 
 .match-table table {
@@ -136,11 +150,18 @@ header a {
   background-color: #7dd3c5;
 }
 
+.pagination-container {
+  position: sticky;
+  bottom: 0;
+  left: 0; /* Stays in view during horizontal scrolling */
+  z-index: 2; /* Ensure it's above the table rows */
+  background-color: #f9f9f9; /* Background color for the pagination */
+  padding: 10px 0;
+  text-align: center;
+}
+
 .pagination {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 10px;
+  display: inline-block; /* Ensures buttons stay in line */
 }
 
 .pagination button {
@@ -174,6 +195,10 @@ header a {
   .match-table {
     display: block;
     overflow-x: scroll;
+    font-size: 0.8em;
+  }
+  .match-table thead th{
+    top: 70px; /* Adjust based on title height */
   }
   .match-table th,
   .match-table td {
