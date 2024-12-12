@@ -11,7 +11,14 @@ const app = express();
 const redis = require("redis");
 
 // Create a Redis client
-const client = redis.createClient();
+const client = redis.createClient({
+  username: process.env.REDIS_USERNAME,
+  password: process.env.REDIS_PASSWORD,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT, 10), // Convert to a number
+  },
+});
 
 const DEFAULT_EXPIRATION = 3600;
 

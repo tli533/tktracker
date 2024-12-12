@@ -67,6 +67,7 @@ header a {
   height: 400px; /* Adjust as needed */
   background-color: #f9f9f9; /* Light background for each graph */
   padding: 15px;
+  padding-bottom: 0px;
   border-radius: 10px;
 }
 
@@ -93,6 +94,12 @@ header a {
   text-align: center;
   font-weight: bold;
   border-bottom: 1px solid #ddd;
+  
+}
+
+.table-component {
+  background-color: #f9f9f9;
+  border-radius: 10px;
   
 }
 

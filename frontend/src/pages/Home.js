@@ -287,7 +287,7 @@ const SearchPlayer = () => {
           return window.innerWidth >= 800;
         },
         color: "black",
-        font: { size: 12 },
+        font: { size: 11 },
         formatter: function (value) {
           return `${value}%`;
         },

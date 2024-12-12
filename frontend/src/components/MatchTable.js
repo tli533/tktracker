@@ -16,45 +16,47 @@ const MatchTable = ({ matches, wins }) => {
   );
 
   return (
-    <div className="match-table">
-      <div className="match-title">
-        <h4>Match History</h4>
-      </div>
+    <div className="table-component">
+      <div className="match-table">
+        <div className="match-title">
+          <h4>Match History</h4>
+        </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Character</th>
-            <th>Result</th>
-            <th>Opponent</th>
-            <th>Character</th>
-            <th>Opponent ID</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentMatches.map((match, index) => (
-            <tr
-              key={index}
-              className={wins.includes(match) ? "win-row" : "loss-row"}
-            >
-              <td>{new Date(match.date).toLocaleDateString()}</td>
-              <td>{match.char || "Unknown"}</td>
-              <td>{wins.includes(match) ? "Win" : "Loss"}</td>
-              <td>{match.opp || "Unknown"}</td>
-              <td>{match.oppChar || "Unknown"}</td>
-              <td>{match.oppId || "N/A"}</td>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Character</th>
+              <th>Result</th>
+              <th>Opponent</th>
+              <th>Character</th>
+              <th>Opponent ID</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="pagination-container">
-        {/* Pagination Component */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
+          </thead>
+          <tbody>
+            {currentMatches.map((match, index) => (
+              <tr
+                key={index}
+                className={wins.includes(match) ? "win-row" : "loss-row"}
+              >
+                <td>{new Date(match.date).toLocaleDateString()}</td>
+                <td>{match.char || "Unknown"}</td>
+                <td>{wins.includes(match) ? "Win" : "Loss"}</td>
+                <td>{match.opp || "Unknown"}</td>
+                <td>{match.oppChar || "Unknown"}</td>
+                <td>{match.oppId || "N/A"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="pagination-container">
+          {/* Pagination Component */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
+        </div>
       </div>
     </div>
   );
