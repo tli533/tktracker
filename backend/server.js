@@ -218,6 +218,63 @@ app.get("/api/player/:id/highest-rating", async (req, res) => {
   }
 });
 
+// Search suggestions endpoint
+app.get("/api/players/suggestions", async (req, res) => {
+  const query = req.query.q;
+
+  if (!query) {
+    return res.status(400).json({ error: "Query parameter 'q' is required" });
+  }
+
+  try {
+    // Fetch the HTML from the external site
+    const response = await axios.get(
+      `https://wank.wavu.wiki/player/search?q=${encodeURIComponent(query)}`
+    );
+    const html = response.data;
+
+    // Load the HTML into Cheerio
+    const $ = cheerio.load(html);
+
+    // Parse the dropdown table rows
+    const players = [];
+    $("div.container table tr").each((_, row) => {
+      const rawId = $(row).find("td:nth-child(1)").text().trim();
+      const rawName = $(row).find("td:nth-child(2)").text().trim();
+
+      // Clean up the raw ID and name
+      const cleanedId = rawId.replace(/\n+/g, "").trim(); // Remove newlines and extra spaces
+      const cleanedName = rawName.replace(/\n+/g, "").trim(); // Remove newlines and extra spaces
+
+      // Split cleaned ID into name and player ID
+      const parts = cleanedId.split(/\s+/); // Split by spaces
+      const name = parts[0]; // First part is the name
+      const id = parts[1] || parts[0]; // Second part should be the ID, fall back to the first part if it doesn't exist
+
+      if (id && name) {
+        players.push({
+          id: id, // Alphanumeric ID
+          name: name, // Player's name
+        });
+      }
+    });
+
+    // Get the remaining results count
+    const remainingText = $("div.container").text();
+    const match = remainingText.match(/(\d+)\s+remaining/i);
+    const remaining = match ? parseInt(match[1], 10) : 0;
+
+    // Return parsed and cleaned data
+    res.json({
+      players: players.slice(0, 50), // Limit to 50 results
+      remaining,
+    });
+  } catch (error) {
+    console.error("Error fetching search results:", error.message);
+    res.status(500).json({ error: "Failed to fetch player suggestions" });
+  }
+});
+
 // Listen for requests
 app.listen(process.env.PORT, () => {
   console.log("listening on port", process.env.PORT);
