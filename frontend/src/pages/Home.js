@@ -54,7 +54,7 @@ const SearchPlayer = () => {
   // Fetch player suggestions dynamically
   const handleInputChange = async (e) => {
     const query = e.target.value;
-    setPlayerName(query); // Update input field with query
+    setPlayerName(query);
 
     if (query.length > 1) {
       try {
@@ -64,12 +64,18 @@ const SearchPlayer = () => {
         if (!response.ok) throw new Error("Failed to fetch suggestions");
 
         const data = await response.json();
-        const suggestionsData = data.players; // Expected: [{ id: "123", name: "John Doe" }]
+        const suggestionsData = data.players;
 
         if (Array.isArray(suggestionsData)) {
-          setSuggestions(suggestionsData);
+          // Deduplicate by player.id
+          const uniqueSuggestions = Array.from(
+            new Map(
+              suggestionsData.map((player) => [player.id, player])
+            ).values()
+          );
+
+          setSuggestions(uniqueSuggestions);
         } else {
-          console.error("Suggestions data is not an array");
           setSuggestions([]);
         }
       } catch (err) {
@@ -77,7 +83,7 @@ const SearchPlayer = () => {
         setSuggestions([]);
       }
     } else {
-      setSuggestions([]); // Clear suggestions if input is too short
+      setSuggestions([]);
     }
   };
 
@@ -392,9 +398,9 @@ const SearchPlayer = () => {
             </div>
             {/* Suggestions */}
             <ul className="suggestions-list">
-              {suggestions.map((player) => (
+              {suggestions.map((player, index) => (
                 <li
-                  key={player.id}
+                  key={player.id || `suggestion-${index}`}
                   onClick={() => handlePlayerSelect(player)}
                   style={{
                     cursor: "pointer",
