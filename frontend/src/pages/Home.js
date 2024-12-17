@@ -42,17 +42,65 @@ const SearchPlayer = () => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [highestRatedChar, setHighestRatedChar] = useState(null);
 
-  // On component mount, check localStorage for previous search
+  const [suggestions, setSuggestions] = useState([]); // State for player suggestions
+
+  // On component mount, load previous searches
   useEffect(() => {
     const history = JSON.parse(localStorage.getItem("searchHistory")) || [];
     setSearchHistory(history);
   }, []);
 
+  // Fetch suggestions dynamically
+  const handleInputChange = async (e) => {
+    const query = e.target.value;
+    setPlayerId(query);
+
+    if (query.length > 1) {
+      try {
+        const response = await fetch(
+          `http://localhost:4000/api/players/suggestions?q=${query}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch suggestions");
+
+        const data = await response.json();
+
+        // Log the data to inspect the structure
+        console.log("Suggestions Data:", data);
+
+        const suggestionsData = data.players; // Extract the players array
+
+        if (Array.isArray(suggestionsData)) {
+          setSuggestions(suggestionsData); // Set only if data is an array
+        } else {
+          console.error("Suggestions data is not an array");
+          setSuggestions([]); // Fallback to an empty array
+        }
+      } catch (err) {
+        console.error("Suggestions Error:", err);
+        setSuggestions([]); // Clear suggestions on error
+      }
+    } else {
+      setSuggestions([]); // Clear suggestions if input is short
+    }
+  };
+
+  const handlePlayerSelect = (e) => {
+    const selectedName = e.target.value; // The player name selected
+    const selectedPlayer = suggestions.find(
+      (player) => player.name === selectedName
+    );
+
+    if (selectedPlayer) {
+      setPlayerId(selectedPlayer.id); // Set the player ID to state
+    }
+  };
+
+  // Handle search on form submission
   const handleSearch = async (e) => {
     e.preventDefault();
     setError(null);
     setMatchHistory(null);
-    setHighestRatedChar(null); // Reset the highest rated character
+    setHighestRatedChar(null);
 
     if (!playerId) {
       setError("Please enter a player ID.");
@@ -62,31 +110,38 @@ const SearchPlayer = () => {
     try {
       setLoading(true);
 
-      // Your existing fetches
+      // Fetch player data
       const playerResponse = await fetch(
         `http://localhost:4000/api/player/${playerId}`
       );
       if (!playerResponse.ok) throw new Error("Failed to fetch player data");
       const playerData = await playerResponse.json();
 
+      // Fetch matchup data
       const matchupResponse = await fetch(
         `http://localhost:4000/api/player/${playerId}/matchups`
       );
       if (!matchupResponse.ok) throw new Error("Failed to fetch matchup data");
       const matchupData = await matchupResponse.json();
 
-      // Add the new fetch for highest rated character
+      // Fetch highest-rated character
       const ratingResponse = await fetch(
         `http://localhost:4000/api/player/${playerId}/highest-rating`
       );
       if (!ratingResponse.ok) throw new Error("Failed to fetch rating data");
       const ratingData = await ratingResponse.json();
 
+      // Update states
       setMatchHistory({
         ...playerData,
         matchups: matchupData,
       });
       setHighestRatedChar(ratingData.highestRatedCharacter);
+
+      // Update search history and localStorage
+      const updatedHistory = [...searchHistory, playerId];
+      localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
+      setSearchHistory(updatedHistory);
     } catch (err) {
       console.error("Search Error:", err);
       setError(err.message);
@@ -329,21 +384,42 @@ const SearchPlayer = () => {
   return (
     <div className="search-player">
       <h2>Search for Player</h2>
-      <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          placeholder="Enter Player ID"
-          value={playerId}
-          onChange={(e) => setPlayerId(e.target.value)}
-          list="player-history"
-        />
-        <datalist id="player-history">
-          {searchHistory.map((id, index) => (
-            <option key={index} value={id} />
-          ))}
-        </datalist>
-        <button type="submit">Search</button>
-      </form>
+      <div className="search-container">
+        <form onSubmit={handleSearch}>
+          <div className="search-input-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Search player..."
+              value={playerId}
+              onChange={handleInputChange}
+              onInput={handlePlayerSelect}
+              list="player-suggestions"
+            />
+            <button
+              type="button"
+              className="clear-button"
+              onClick={() => setPlayerId("")}
+            >
+              ✖
+            </button>
+
+            {/* Datalist for player suggestions */}
+            <datalist id="player-suggestions">
+              {Array.isArray(suggestions) && suggestions.length > 0
+                ? suggestions.map((player, index) => (
+                    <option
+                      key={index}
+                      value={player.name}
+                      data-id={player.id}
+                    />
+                  ))
+                : null}
+            </datalist>
+            <p>Selected Player ID: {playerId}</p>
+          </div>
+        </form>
+      </div>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
       {loading ? (

@@ -227,6 +227,14 @@ app.get("/api/players/suggestions", async (req, res) => {
   }
 
   try {
+    // Check Redis for cached data
+    const cacheKey = `player_suggestions_${query}`;
+    const cachedData = await client.get(cacheKey);
+    if (cachedData) {
+      console.log("Cache hit for player suggestions");
+      return res.json(JSON.parse(cachedData));
+    }
+
     // Fetch the HTML from the external site
     const response = await axios.get(
       `https://wank.wavu.wiki/player/search?q=${encodeURIComponent(query)}`
@@ -249,7 +257,7 @@ app.get("/api/players/suggestions", async (req, res) => {
       // Split cleaned ID into name and player ID
       const parts = cleanedId.split(/\s+/); // Split by spaces
       const name = parts[0]; // First part is the name
-      const id = parts[1] || parts[0]; // Second part should be the ID, fall back to the first part if it doesn't exist
+      const id = (parts[1] || parts[0]).replace(/-/g, ""); // Second part should be the ID, fall back to the first part if it doesn't exist
 
       if (id && name) {
         players.push({
@@ -264,11 +272,21 @@ app.get("/api/players/suggestions", async (req, res) => {
     const match = remainingText.match(/(\d+)\s+remaining/i);
     const remaining = match ? parseInt(match[1], 10) : 0;
 
-    // Return parsed and cleaned data
-    res.json({
+    // Prepare the response
+    const responseData = {
       players: players.slice(0, 50), // Limit to 50 results
       remaining,
-    });
+    };
+
+    // Cache the data in Redis for 1 hour
+    await client.setEx(
+      cacheKey,
+      DEFAULT_EXPIRATION,
+      JSON.stringify(responseData)
+    );
+
+    // Send the response
+    res.json(responseData);
   } catch (error) {
     console.error("Error fetching search results:", error.message);
     res.status(500).json({ error: "Failed to fetch player suggestions" });
