@@ -36,6 +36,7 @@ ChartJS.register(
 
 const SearchPlayer = () => {
   const [playerId, setPlayerId] = useState("");
+  const [playerName, setPlayerName] = useState(""); // Holds the name displayed in the input
   const [matchHistory, setMatchHistory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,10 +51,10 @@ const SearchPlayer = () => {
     setSearchHistory(history);
   }, []);
 
-  // Fetch suggestions dynamically
+  // Fetch player suggestions dynamically
   const handleInputChange = async (e) => {
     const query = e.target.value;
-    setPlayerId(query);
+    setPlayerName(query); // Update input field with query
 
     if (query.length > 1) {
       try {
@@ -63,52 +64,38 @@ const SearchPlayer = () => {
         if (!response.ok) throw new Error("Failed to fetch suggestions");
 
         const data = await response.json();
-
-        // Log the data to inspect the structure
-        console.log("Suggestions Data:", data);
-
-        const suggestionsData = data.players; // Extract the players array
+        const suggestionsData = data.players; // Expected: [{ id: "123", name: "John Doe" }]
 
         if (Array.isArray(suggestionsData)) {
-          setSuggestions(suggestionsData); // Set only if data is an array
+          setSuggestions(suggestionsData);
         } else {
           console.error("Suggestions data is not an array");
-          setSuggestions([]); // Fallback to an empty array
+          setSuggestions([]);
         }
       } catch (err) {
         console.error("Suggestions Error:", err);
-        setSuggestions([]); // Clear suggestions on error
+        setSuggestions([]);
       }
     } else {
-      setSuggestions([]); // Clear suggestions if input is short
+      setSuggestions([]); // Clear suggestions if input is too short
     }
   };
 
-  const handlePlayerSelect = (e) => {
-    const selectedName = e.target.value; // The player name selected
-    const selectedPlayer = suggestions.find(
-      (player) => player.name === selectedName
-    );
-
-    if (selectedPlayer) {
-      setPlayerId(selectedPlayer.id); // Set the player ID to state
-    }
+  // Handle selecting a player from suggestions
+  const handlePlayerSelect = (selectedPlayer) => {
+    setPlayerName(selectedPlayer.name); // Keep the name in the input
+    setPlayerId(selectedPlayer.id); // Store the player ID for API calls
+    setSuggestions([]); // Clear suggestions
+    fetchPlayerData(selectedPlayer.id); // Immediately fetch player data
   };
 
-  // Handle search on form submission
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setMatchHistory(null);
-    setHighestRatedChar(null);
-
-    if (!playerId) {
-      setError("Please enter a player ID.");
-      return;
-    }
-
+  // Fetch player data by ID
+  const fetchPlayerData = async (playerId) => {
     try {
       setLoading(true);
+      setError(null);
+      setMatchHistory(null);
+      setHighestRatedChar(null);
 
       // Fetch player data
       const playerResponse = await fetch(
@@ -139,11 +126,11 @@ const SearchPlayer = () => {
       setHighestRatedChar(ratingData.highestRatedCharacter);
 
       // Update search history and localStorage
-      const updatedHistory = [...searchHistory, playerId];
+      const updatedHistory = [...searchHistory, playerName];
       localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
       setSearchHistory(updatedHistory);
     } catch (err) {
-      console.error("Search Error:", err);
+      console.error("Fetch Player Data Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -385,38 +372,40 @@ const SearchPlayer = () => {
     <div className="search-player">
       <h2>Search for Player</h2>
       <div className="search-container">
-        <form onSubmit={handleSearch}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="search-input-wrapper">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Search player..."
-              value={playerId}
-              onChange={handleInputChange}
-              onInput={handlePlayerSelect}
-              list="player-suggestions"
-            />
-            <button
-              type="button"
-              className="clear-button"
-              onClick={() => setPlayerId("")}
-            >
-              ✖
-            </button>
-
-            {/* Datalist for player suggestions */}
-            <datalist id="player-suggestions">
-              {Array.isArray(suggestions) && suggestions.length > 0
-                ? suggestions.map((player, index) => (
-                    <option
-                      key={index}
-                      value={player.name}
-                      data-id={player.id}
-                    />
-                  ))
-                : null}
-            </datalist>
-            <p>Selected Player ID: {playerId}</p>
+            <div className="input-icons">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search for a player..."
+                value={playerName}
+                onChange={handleInputChange}
+              />
+              <button
+                type="button"
+                className="clear-button"
+                onClick={() => setPlayerName("")}
+              >
+                ✖
+              </button>
+            </div>
+            {/* Suggestions */}
+            <ul className="suggestions-list">
+              {suggestions.map((player) => (
+                <li
+                  key={player.id}
+                  onClick={() => handlePlayerSelect(player)}
+                  style={{
+                    cursor: "pointer",
+                    padding: "8px",
+                    borderBottom: "1px solid #ddd",
+                  }}
+                >
+                  {player.name}
+                </li>
+              ))}
+            </ul>
           </div>
         </form>
       </div>
