@@ -43,6 +43,7 @@ const SearchPlayer = () => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [highestRatedChar, setHighestRatedChar] = useState(null);
 
+  const [isFocused, setIsFocused] = useState(false); // Tracks focus state
   const [suggestions, setSuggestions] = useState([]); // State for player suggestions
 
   // On component mount, load previous searches
@@ -93,6 +94,7 @@ const SearchPlayer = () => {
     setPlayerId(selectedPlayer.id); // Store the player ID for API calls
     setSuggestions([]); // Clear suggestions
     fetchPlayerData(selectedPlayer.id); // Immediately fetch player data
+    setIsFocused(false); // Hide dropdown
   };
 
   // Fetch player data by ID
@@ -375,7 +377,12 @@ const SearchPlayer = () => {
       : [];
 
   return (
-    <div className="search-player">
+    <div
+      className="search-player"
+      onBlur={() => setIsFocused(false)}
+      onFocus={() => setIsFocused(true)}
+      tabIndex={-1}
+    >
       <h2>Search for Player</h2>
       <div className="search-container">
         <form onSubmit={(e) => e.preventDefault()}>
@@ -384,7 +391,7 @@ const SearchPlayer = () => {
               <span className="search-icon">🔍</span>
               <input
                 type="text"
-                placeholder="Search for a player..."
+                placeholder=" Search for a player or ID..."
                 value={playerName}
                 onChange={handleInputChange}
               />
@@ -396,22 +403,31 @@ const SearchPlayer = () => {
                 ✖
               </button>
             </div>
+
             {/* Suggestions */}
-            <ul className="suggestions-list">
-              {suggestions.map((player, index) => (
-                <li
-                  key={player.id || `suggestion-${index}`}
-                  onClick={() => handlePlayerSelect(player)}
-                  style={{
-                    cursor: "pointer",
-                    padding: "8px",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  {player.name}
-                </li>
-              ))}
-            </ul>
+            {isFocused && suggestions.length > 0 && (
+              <ul className="suggestions-list">
+                {suggestions.map((player, index) => (
+                  <li
+                    key={player.id || `suggestion-${index}`}
+                    onClick={() => handlePlayerSelect(player)}
+                    style={{
+                      cursor: "pointer",
+                      padding: "8px",
+                      borderBottom: "1px solid #ddd",
+                      display: "flex", // Aligns text
+                      justifyContent: "space-between", // Space between name and ID
+                    }}
+                  >
+                    <span>{player.name}</span> {/* Display player name */}
+                    <span style={{ color: "#888", fontSize: "12px" }}>
+                      ID: {player.id}
+                    </span>{" "}
+                    {/* Display player ID */}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </form>
       </div>
@@ -425,6 +441,7 @@ const SearchPlayer = () => {
         matchHistory && (
           <div>
             <h3>Player: {matchHistory.playerName}</h3>
+            <h5>Player ID: {playerId}</h5>
             {highestRatedChar && (
               <div className="highest-rated-char">
                 <h4>
