@@ -20,7 +20,7 @@ const client = redis.createClient({
   },
 });
 
-const DEFAULT_EXPIRATION = 3600;
+const DEFAULT_EXPIRATION = 10;
 
 client.on("error", (err) => console.error("Redis Client Error", err));
 
@@ -35,14 +35,14 @@ app.get("/api/player/:id", async (req, res) => {
 
   try {
     // Check Redis for cached data
-    const cachedData = await client.get(`player_${playerId}`);
-    if (cachedData) {
-      console.log("Cache hit");
-      return res.json(JSON.parse(cachedData));
-    }
+    // const cachedData = await client.get(`player_${playerId}`);
+    // if (cachedData) {
+    //   console.log("Cache hit");
+    //   return res.json(JSON.parse(cachedData));
+    // }
 
     // If no cache, fetch data from the external URL
-    const url = `https://wank.wavu.wiki/player/${playerId}`;
+    const url = `https://wank.wavu.wiki/player/${playerId}?limit=5000`;
     const response = await axios.get(url, { timeout: 10000 }); // 10-second timeout
     const html = response.data;
     const $ = cheerio.load(html);
@@ -54,23 +54,23 @@ app.get("/api/player/:id", async (req, res) => {
     $("tbody tr").each(function () {
       const dateCell = $(this).find("td:nth-child(1)");
       const p1CharacterCell = $(this).find("td:nth-child(2)");
-      const p2CharacterCell = $(this).find("td:nth-child(6)");
-      const playerRatingCell = $(this).find("td:nth-child(4)");
+      const p2CharacterCell = $(this).find("td:nth-child(4)");
+      const playerRatingCell = $(this).find("td:nth-child(2)");
       const winSpan = playerRatingCell.find("span.win");
       const loseSpan = playerRatingCell.find("span.lose");
-      const opponentCell = $(this).find("td:nth-child(5)");
 
-      let opponentName = opponentCell.text().trim();
+      const opponentCell = $(this).find("td:nth-child(4) .player"); // Correct cell for opponent
+      const opponentName = opponentCell.find("a").text().trim();
       const opponentId = opponentCell.find("a").attr("href")?.split("/").pop();
+      const oppChar = $(this).find("td:nth-child(4) .char").text().trim();
 
-      opponentName = opponentName
-        .replace(/\s+/g, " ")
-        .replace("(h2h)", "")
+      let date = dateCell.text().trim();
+      date = date
+        .replace(/(printDateTime)/, "") // Removing the substring
+        .replace(/\(\d+\)/, "")
         .trim();
 
-      const date = dateCell.text().trim();
-      const playerChar = p1CharacterCell.text().trim();
-      const oppChar = p2CharacterCell.text().trim();
+      const playerChar = p1CharacterCell.find(".char").text().trim();
 
       if (winSpan.length > 0) {
         winData.push({
@@ -102,11 +102,11 @@ app.get("/api/player/:id", async (req, res) => {
     };
 
     // Cache data in Redis for 1 hour (3600 seconds)
-    await client.setEx(
-      `player_${playerId}`,
-      DEFAULT_EXPIRATION,
-      JSON.stringify(responseData)
-    );
+    // await client.setEx(
+    //   `player_${playerId}`,
+    //   DEFAULT_EXPIRATION,
+    //   JSON.stringify(responseData)
+    // );
 
     res.json(responseData);
   } catch (error) {
@@ -162,6 +162,16 @@ app.get("/api/player/:id/matchups", async (req, res) => {
         winRate: winRate,
       });
     });
+
+    // Filter out null or invalid entries
+    matchups = matchups.filter(
+      (matchup) =>
+        matchup.opponent &&
+        !isNaN(matchup.gamesPlayed) &&
+        !isNaN(matchup.wins) &&
+        !isNaN(matchup.losses) &&
+        !isNaN(matchup.winRate)
+    );
 
     // Cache the data
     await client.setEx(
@@ -227,14 +237,6 @@ app.get("/api/players/suggestions", async (req, res) => {
   }
 
   try {
-    // Check Redis for cached data
-    const cacheKey = `player_suggestions_${query}`;
-    const cachedData = await client.get(cacheKey);
-    if (cachedData) {
-      console.log("Cache hit for player suggestions");
-      return res.json(JSON.parse(cachedData));
-    }
-
     // Fetch the HTML from the external site
     const response = await axios.get(
       `https://wank.wavu.wiki/player/search?q=${encodeURIComponent(query)}`
@@ -252,12 +254,31 @@ app.get("/api/players/suggestions", async (req, res) => {
 
       // Clean up the raw ID and name
       const cleanedId = rawId.replace(/\n+/g, "").trim(); // Remove newlines and extra spaces
-      const cleanedName = rawName.replace(/\n+/g, "").trim(); // Remove newlines and extra spaces
+      let cleanedName = rawName.replace(/\n+/g, "").trim(); // Remove newlines and extra spaces
 
-      // Split cleaned ID into name and player ID
-      const parts = cleanedId.split(/\s+/); // Split by spaces
-      const name = parts[0]; // First part is the name
-      const id = (parts[1] || parts[0]).replace(/-/g, ""); // Second part should be the ID, fall back to the first part if it doesn't exist
+      // Use regex to extract the ID (12 characters alphanumeric with hyphens)
+      const idMatch = cleanedId.match(/[a-zA-Z0-9-]{14}/); // Match 12-character alphanumeric ID with hyphens (14)
+      let id = cleanedId;
+      let name = cleanedName;
+
+      if (idMatch) {
+        id = idMatch[0]; // Set the ID to the matched 12-character ID
+        name = cleanedId.replace(id, "").trim(); // Extract the name by removing the ID part
+      }
+
+      // Fallback if no valid ID found: Clean up the ID to only alphanumeric characters
+      if (!idMatch) {
+        id = cleanedId.replace(/[^a-zA-Z0-9]/g, ""); // Remove non-alphanumeric characters
+      }
+
+      id = id.replace(/-/g, ""); // Remove all dashes
+
+      // Clean the name further by removing platform info and numbers at the end
+      // Remove occurrences of platform names like 'steam', 'playstation' and any digits after it
+      name = name
+        .replace(/\s+(steam|playstation|xbox|psn)\s+.*$/i, "") // Match and remove platform info and anything after
+        .replace(/\s+/g, " ") // Collapse multiple spaces into one
+        .trim();
 
       if (id && name) {
         players.push({
@@ -277,13 +298,6 @@ app.get("/api/players/suggestions", async (req, res) => {
       players: players.slice(0, 50), // Limit to 50 results
       remaining,
     };
-
-    // Cache the data in Redis for 1 hour
-    await client.setEx(
-      cacheKey,
-      DEFAULT_EXPIRATION,
-      JSON.stringify(responseData)
-    );
 
     // Send the response
     res.json(responseData);

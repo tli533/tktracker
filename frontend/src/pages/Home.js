@@ -310,6 +310,7 @@ const SearchPlayer = () => {
       },
     ],
   };
+
   const barChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -332,19 +333,15 @@ const SearchPlayer = () => {
         },
       },
       datalabels: {
-        display: function (context) {
-          // Only show data labels on larger screens
-          return window.innerWidth >= 800;
-        },
         color: "black",
-        font: { size: 11 },
+        font: { size: 10 },
         formatter: function (value) {
           return `${value}%`;
         },
       },
       title: {
         display: true,
-        text: "Character Matchup Win Rates",
+
         font: { size: window.innerWidth < 600 ? 14 : 20 },
       },
     },
@@ -364,9 +361,17 @@ const SearchPlayer = () => {
           text: "Characters",
           font: { size: window.innerWidth < 600 ? 10 : 14 },
         },
+        // Adjust bar spacing
+        ticks: {
+          font: { size: window.innerWidth < 600 ? 10 : 14 },
+          maxRotation: 45,
+          minRotation: 0,
+          autoSkip: true,
+        },
       },
     },
   };
+
   // Get the latest 10 matches from the match history
   // Get all matches from the match history
   const allMatches =
@@ -467,17 +472,30 @@ const SearchPlayer = () => {
               </div>
 
               {/* Bottom Half: Bar Chart */}
-              <div className="bar-chart-container">
-                {matchupData.length > 0 ? (
-                  <>
+              <div className="charMatchupTitle">
+                <h3>Character Matchup Win Rates</h3>
+                <div
+                  className="bar-chart-container"
+                  style={{ overflowX: "auto" }}
+                >
+                  <div
+                    style={{
+                      minWidth: `${matchupData.length * 60}px`,
+                      height: "100%",
+                    }}
+                  >
                     <Bar data={barChartData} options={barChartOptions} />
-                    {/* Latest Matches Table */}
-                    <MatchTable matches={allMatches} wins={matchHistory.wins} />
-                  </>
-                ) : (
-                  <p>No matchups data available.</p>
-                )}
+                  </div>
+                </div>
               </div>
+              {matchupData.length > 0 ? (
+                <>
+                  {/* Latest Matches Table */}
+                  <MatchTable matches={allMatches} wins={matchHistory.wins} />
+                </>
+              ) : (
+                <p>No matchups data available.</p>
+              )}
             </div>
           </div>
         )
