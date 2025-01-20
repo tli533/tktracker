@@ -500,6 +500,9 @@ const SearchPlayer = () => {
           </div>
         )
       )}
+      <div>
+        <h3>Enter a Tekken ID or Name!</h3>
+      </div>
     </div>
   );
 };
