@@ -20,7 +20,7 @@ const client = redis.createClient({
   },
 });
 
-const DEFAULT_EXPIRATION = 10;
+const DEFAULT_EXPIRATION = 3600;
 
 client.on("error", (err) => console.error("Redis Client Error", err));
 
@@ -35,11 +35,11 @@ app.get("/api/player/:id", async (req, res) => {
 
   try {
     // Check Redis for cached data
-    // const cachedData = await client.get(`player_${playerId}`);
-    // if (cachedData) {
-    //   console.log("Cache hit");
-    //   return res.json(JSON.parse(cachedData));
-    // }
+    const cachedData = await client.get(`player_${playerId}`);
+    if (cachedData) {
+      console.log("Cache hit");
+      return res.json(JSON.parse(cachedData));
+    }
 
     // If no cache, fetch data from the external URL
     const url = `https://wank.wavu.wiki/player/${playerId}?limit=5000`;
@@ -102,11 +102,11 @@ app.get("/api/player/:id", async (req, res) => {
     };
 
     // Cache data in Redis for 1 hour (3600 seconds)
-    // await client.setEx(
-    //   `player_${playerId}`,
-    //   DEFAULT_EXPIRATION,
-    //   JSON.stringify(responseData)
-    // );
+    await client.setEx(
+      `player_${playerId}`,
+      DEFAULT_EXPIRATION,
+      JSON.stringify(responseData)
+    );
 
     res.json(responseData);
   } catch (error) {
