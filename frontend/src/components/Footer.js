@@ -14,7 +14,7 @@ const Footer = () => {
           className="database-link"
         >
           <l-helix size="40" speed="7" color="black"></l-helix>
-          wavu
+          <p>wavu</p>
         </a>
         <p className="footer-text">
           Credits to wank.wavu.wiki for this fun project
