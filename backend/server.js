@@ -307,6 +307,10 @@ app.get("/api/players/suggestions", async (req, res) => {
   }
 });
 
+app.get("/", (req, res) => {
+  res.json({ mssg: "Welcome to the app" });
+});
+
 // Listen for requests
 app.listen(process.env.PORT, () => {
   console.log("listening on port", process.env.PORT);
