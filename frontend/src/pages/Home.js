@@ -60,7 +60,7 @@ const SearchPlayer = () => {
     if (query.length > 1) {
       try {
         const response = await fetch(
-          `http://localhost:4000/api/players/suggestions?q=${query}`
+          `https://tktracker.vercel.app/api/players/suggestions?q=${query}`
         );
         if (!response.ok) throw new Error("Failed to fetch suggestions");
 
@@ -107,21 +107,21 @@ const SearchPlayer = () => {
 
       // Fetch player data
       const playerResponse = await fetch(
-        `http://localhost:4000/api/player/${playerId}`
+        `https://tktracker.vercel.app/api/player/${playerId}`
       );
       if (!playerResponse.ok) throw new Error("Failed to fetch player data");
       const playerData = await playerResponse.json();
 
       // Fetch matchup data
       const matchupResponse = await fetch(
-        `http://localhost:4000/api/player/${playerId}/matchups`
+        `https://tktracker.vercel.app/api/player/${playerId}/matchups`
       );
       if (!matchupResponse.ok) throw new Error("Failed to fetch matchup data");
       const matchupData = await matchupResponse.json();
 
       // Fetch highest-rated character
       const ratingResponse = await fetch(
-        `http://localhost:4000/api/player/${playerId}/highest-rating`
+        `https://tktracker.vercel.app/api/player/${playerId}/highest-rating`
       );
       if (!ratingResponse.ok) throw new Error("Failed to fetch rating data");
       const ratingData = await ratingResponse.json();
